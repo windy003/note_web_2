@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="notes-list">
+    {% for note in notes %}
+    <div class="note-card">
+        <h2>{{ note[1] }}</h2>
+        <p>{{ note[2]|truncate(100) }}</p>
+        <div class="note-actions">
+            <span class="date">{{ note[3] }}</span>
+            <a href="{{ url_for('edit', id=note[0]) }}">编辑</a>
+            <a href="{{ url_for('delete', id=note[0]) }}" onclick="return confirm('确定要删除吗？')">删除</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

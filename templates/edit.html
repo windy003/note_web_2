@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form method="POST" class="note-form">
+    <div>
+        <label for="title">标题：</label>
+        <input type="text" id="title" name="title" value="{{ note[1] }}" required>
+    </div>
+    <div>
+        <label for="content">内容：</label>
+        <textarea id="content" name="content" required>{{ note[2] }}</textarea>
+    </div>
+    <button type="submit">更新</button>
+</form>
+{% endblock %} 
