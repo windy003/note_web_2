@@ -7,7 +7,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length, EqualTo
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 import pytz
 
 app = Flask(__name__)
@@ -23,6 +23,7 @@ class Note(db.Model):
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Shanghai')))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Shanghai')), onupdate=datetime.now)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 class User(UserMixin, db.Model):
@@ -99,14 +100,15 @@ def init_db():
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   title TEXT NOT NULL,
                   content TEXT NOT NULL,
-                  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)''')
+                  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)''')
     conn.commit()
     conn.close()
 
 @app.route('/')
 def index():
     if current_user.is_authenticated:
-        notes = Note.query.filter_by(user_id=current_user.id).order_by(Note.created_at.desc()).all()
+        notes = Note.query.filter_by(user_id=current_user.id).order_by(Note.updated_at.desc()).all()
     else:
         notes = []
     return render_template('index.html', notes=notes)
@@ -136,9 +138,21 @@ def edit(id):
     if request.method == 'POST':
         note.title = request.form['title']
         note.content = request.form['content']
+        note.updated_at = datetime.now(pytz.timezone('Asia/Shanghai'))
         db.session.commit()
         return redirect(url_for('index'))
     return render_template('edit.html', note=note)
+
+@app.route('/apply/<int:id>')
+@login_required
+def apply(id):
+    note = Note.query.get_or_404(id)
+    if note.user_id != current_user.id:
+        flash('您没有权限申请这个笔记')
+        return redirect(url_for('index'))
+    
+    flash('申请已提交，等待审核')
+    return redirect(url_for('index'))
 
 @app.route('/delete/<int:id>')
 @login_required

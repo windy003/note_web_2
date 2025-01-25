@@ -15,7 +15,7 @@
             <div class="note-actions">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted fs-5">
-                        {{ note.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                        {{ note.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}
                     </span>
                     {% if note.user_id == current_user.id %}
                     <div>
@@ -23,6 +23,7 @@
                         <a href="{{ url_for('delete', id=note.id) }}" 
                            onclick="return confirm('确定要删除吗？')" 
                            class="btn btn-outline-danger fs-5">删除</a>
+                        <a href="{{ url_for('apply', id=note.id) }}" class="btn btn-outline-warning fs-5">申请</a>
                     </div>
                     {% endif %}
                 </div>
