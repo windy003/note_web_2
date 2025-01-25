@@ -152,32 +152,6 @@ def delete(id):
     db.session.commit()
     return redirect(url_for('index'))
 
-@app.route('/apply/<int:id>')
-@login_required
-def apply(id):
-    note = Note.query.get_or_404(id)
-    if note.user_id != current_user.id:
-        flash('您没有权限操作这个笔记')
-        return redirect(url_for('index'))
-    
-    note.status = 'pending'  # 设置状态为待审核
-    db.session.commit()
-    flash('申请已提交，等待审核')
-    return redirect(url_for('index'))
-
-@app.route('/approve/<int:id>')
-@login_required
-def approve(id):
-    note = Note.query.get_or_404(id)
-    if not current_user.is_admin:  # 需要添加管理员判断逻辑
-        flash('只有管理员可以审核申请')
-        return redirect(url_for('index'))
-    
-    note.status = 'approved'
-    db.session.commit()
-    flash('申请已通过')
-    return redirect(url_for('index'))
-
 if __name__ == '__main__':
     with app.app_context():
         # 只在首次运行时创建表
