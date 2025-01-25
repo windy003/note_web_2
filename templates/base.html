@@ -21,24 +21,31 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link fs-5" href="{{ url_for('index') }}">首页</a>
                     </li>
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link fs-5" href="{{ url_for('create') }}">新建笔记</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link fs-5" href="{{ url_for('logout') }}">退出登录</a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link fs-5" href="{{ url_for('create') }}">新建笔记</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <span class="nav-link fs-5">欢迎, {{ current_user.username }}</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fs-5" href="{{ url_for('logout') }}">退出</a>
+                    </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link fs-5" href="{{ url_for('login') }}">登录</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link fs-5" href="{{ url_for('register') }}">注册</a>
-                        </li>
+                    <li class="nav-item">
+                        <a class="nav-link fs-5" href="{{ url_for('login') }}">登录</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fs-5" href="{{ url_for('register') }}">注册</a>
+                    </li>
                     {% endif %}
                 </ul>
             </div>

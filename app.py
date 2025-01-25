@@ -104,7 +104,10 @@ def init_db():
 
 @app.route('/')
 def index():
-    notes = Note.query.order_by(Note.created_at.desc()).all()
+    if current_user.is_authenticated:
+        notes = Note.query.filter_by(user_id=current_user.id).order_by(Note.created_at.desc()).all()
+    else:
+        notes = []
     return render_template('index.html', notes=notes)
 
 @app.route('/create', methods=['GET', 'POST'])
@@ -176,10 +179,9 @@ def approve(id):
 
 if __name__ == '__main__':
     with app.app_context():
-        db.drop_all()  # 删除所有表
-        db.create_all()  # 重新创建表
+        # 只在首次运行时创建表
+        db.create_all()  # 创建表（如果不存在）
         db.session.commit()
-
 
     env = os.getenv('FLASK_ENV', 'development')
     print(f"当前环境: {env}")
