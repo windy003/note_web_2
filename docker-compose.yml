@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    image: windy007008/note-web-2:latest
+    ports:
+      - "80:80"  # 开发环境用80端口
+    volumes:
+      - ./instance:/app/instance  # 使用命名卷
+      - ./static:/app/static  # 挂载静态文件目录
+      - ./templates:/app/templates  # 挂载模板目录
+      - ./app.py:/app/app.py  # 挂载主程序文件
+    environment:
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
+      - FLASK_ENV=development  # 标记为开发环境
+    restart: always 

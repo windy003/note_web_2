@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  web:
+    image: windy007008/note-web-2:latest
+    ports:
+      - "444:444"  # 生产环境用443
+    volumes:
+      - instance:/app/instance  
+      - /etc/letsencrypt/live/windy.run/fullchain.pem:/etc/ssl/certs/fullchain.pem:ro
+      - /etc/letsencrypt/live/windy.run/privkey.pem:/etc/ssl/certs/privkey.pem:ro
+    environment:
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}  # 使用环境变量
+      - FLASK_ENV=production  # 标记生产环境
+    user: root  # 临时使用root用户运行
+    restart: always 
+
+volumes:
+  instance:

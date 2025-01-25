@@ -1,8 +1,95 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from datetime import datetime
 import sqlite3
+import os
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Length, EqualTo
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your-secret-key-goes-here'  # 使用安全的随机字符串
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///notes.db'
+db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+class Note(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(120), nullable=False)
+    notes = db.relationship('Note', backref='author', lazy=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+class LoginForm(FlaskForm):
+    username = StringField('用户名', validators=[DataRequired(), Length(min=4, max=20)])
+    password = PasswordField('密码', validators=[DataRequired()])
+    submit = SubmitField('登录')
+
+class RegisterForm(FlaskForm):
+    username = StringField('用户名', validators=[DataRequired(), Length(min=4, max=20)])
+    password = PasswordField('密码', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('确认密码', validators=[
+        DataRequired(),
+        EqualTo('password', message='两次输入的密码不匹配')
+    ])
+    submit = SubmitField('注册')
+
+    def validate_username(self, field):
+        if User.query.filter_by(username=field.data).first():
+            raise ValidationError('用户名已被使用')
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            return redirect(url_for('index'))
+        flash('用户名或密码错误')
+    return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegisterForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('注册成功，请登录')
+        return redirect(url_for('login'))
+    return render_template('register.html', form=form)
 
 def init_db():
     conn = sqlite3.connect('notes.db')
@@ -17,53 +104,96 @@ def init_db():
 
 @app.route('/')
 def index():
-    conn = sqlite3.connect('notes.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM notes ORDER BY created_at DESC')
-    notes = c.fetchall()
-    conn.close()
+    notes = Note.query.order_by(Note.created_at.desc()).all()
     return render_template('index.html', notes=notes)
 
 @app.route('/create', methods=['GET', 'POST'])
+@login_required
 def create():
     if request.method == 'POST':
-        title = request.form['title']
-        content = request.form['content']
-        conn = sqlite3.connect('notes.db')
-        c = conn.cursor()
-        c.execute('INSERT INTO notes (title, content) VALUES (?, ?)',
-                 (title, content))
-        conn.commit()
-        conn.close()
+        note = Note(
+            title=request.form['title'],
+            content=request.form['content'],
+            user_id=current_user.id
+        )
+        db.session.add(note)
+        db.session.commit()
         return redirect(url_for('index'))
     return render_template('create.html')
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def edit(id):
-    conn = sqlite3.connect('notes.db')
-    c = conn.cursor()
-    if request.method == 'POST':
-        title = request.form['title']
-        content = request.form['content']
-        c.execute('UPDATE notes SET title = ?, content = ? WHERE id = ?',
-                 (title, content, id))
-        conn.commit()
-        conn.close()
+    note = Note.query.get_or_404(id)
+    if note.user_id != current_user.id:
+        flash('您没有权限编辑这个笔记')
         return redirect(url_for('index'))
-    c.execute('SELECT * FROM notes WHERE id = ?', (id,))
-    note = c.fetchone()
-    conn.close()
+    
+    if request.method == 'POST':
+        note.title = request.form['title']
+        note.content = request.form['content']
+        db.session.commit()
+        return redirect(url_for('index'))
     return render_template('edit.html', note=note)
 
 @app.route('/delete/<int:id>')
+@login_required
 def delete(id):
-    conn = sqlite3.connect('notes.db')
-    c = conn.cursor()
-    c.execute('DELETE FROM notes WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
+    note = Note.query.get_or_404(id)
+    if note.user_id != current_user.id:
+        flash('您没有权限删除这个笔记')
+        return redirect(url_for('index'))
+        
+    db.session.delete(note)
+    db.session.commit()
+    return redirect(url_for('index'))
+
+@app.route('/apply/<int:id>')
+@login_required
+def apply(id):
+    note = Note.query.get_or_404(id)
+    if note.user_id != current_user.id:
+        flash('您没有权限操作这个笔记')
+        return redirect(url_for('index'))
+    
+    note.status = 'pending'  # 设置状态为待审核
+    db.session.commit()
+    flash('申请已提交，等待审核')
+    return redirect(url_for('index'))
+
+@app.route('/approve/<int:id>')
+@login_required
+def approve(id):
+    note = Note.query.get_or_404(id)
+    if not current_user.is_admin:  # 需要添加管理员判断逻辑
+        flash('只有管理员可以审核申请')
+        return redirect(url_for('index'))
+    
+    note.status = 'approved'
+    db.session.commit()
+    flash('申请已通过')
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True, host='0.0.0.0', port=80) 
+    with app.app_context():
+        db.drop_all()  # 删除所有表
+        db.create_all()  # 重新创建表
+        db.session.commit()
+
+
+    env = os.getenv('FLASK_ENV', 'development')
+    print(f"当前环境: {env}")
+    
+    if env == 'production':
+        ssl_context = (
+            '/etc/ssl/certs/fullchain.pem',
+            '/etc/ssl/certs/privkey.pem'
+        )
+        app.debug = True
+        app.run(host='0.0.0.0', port=444, ssl_context=ssl_context)
+    else:
+        # 开发环境启用调试模式
+        app.debug = True
+        app.run(host='0.0.0.0', port=80, ssl_context=None) 
+
+
