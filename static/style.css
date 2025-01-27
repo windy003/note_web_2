@@ -208,20 +208,6 @@ main {
     color: #000;
 }
 
-.apply-btn {
-    background-color: #4CAF50;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 3px;
-    text-decoration: none;
-    font-size: 12px;
-    margin-left: 10px;
-}
-
-.apply-btn:hover {
-    background-color: #45a049;
-}
-
 /* 移动端适配 */
 @media (max-width: 768px) {
     html {

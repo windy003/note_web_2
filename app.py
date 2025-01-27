@@ -143,17 +143,6 @@ def edit(id):
         return redirect(url_for('index'))
     return render_template('edit.html', note=note)
 
-@app.route('/apply/<int:id>')
-@login_required
-def apply(id):
-    note = Note.query.get_or_404(id)
-    if note.user_id != current_user.id:
-        flash('您没有权限申请这个笔记')
-        return redirect(url_for('index'))
-    
-    flash('申请已提交，等待审核')
-    return redirect(url_for('index'))
-
 @app.route('/delete/<int:id>')
 @login_required
 def delete(id):
@@ -185,6 +174,6 @@ if __name__ == '__main__':
     else:
         # 开发环境启用调试模式
         app.debug = True
-        app.run(host='0.0.0.0', port=80, ssl_context=None) 
+        app.run(host='0.0.0.0', port=444) 
 
 

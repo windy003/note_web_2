@@ -5,7 +5,7 @@ services:
     build: .
     image: windy007008/note-web-2:latest
     ports:
-      - "80:80"  # 开发环境用80端口
+      - "444:444"  # 修改这里的端口映射从80:80改为444:444
     volumes:
       - ./instance:/app/instance  # 使用命名卷
       - ./static:/app/static  # 挂载静态文件目录
