@@ -14,4 +14,15 @@ services:
     environment:
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
       - FLASK_ENV=development  # 标记为开发环境
-    restart: always 
+    restart: always
+    command: ["gunicorn", 
+              "--workers", "4",
+              "--timeout", "120",
+              "--keep-alive", "5",
+              "--max-requests", "1000",
+              "--max-requests-jitter", "50",
+              "--log-level", "debug",     # 开发环境使用 debug 级别
+              "--access-logfile", "-",
+              "--error-logfile", "-",
+              "--bind", "0.0.0.0:444",
+              "app:app"]

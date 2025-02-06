@@ -7,8 +7,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# 创建一个非root用户来运行应用
-RUN useradd -m myuser
+# 创建非root用户并设置必要权限
+RUN useradd -m myuser && \
+    chown -R myuser:myuser /app && \
+    chmod -R 755 /app
+
 USER myuser
 
-CMD ["gunicorn", "-b", "0.0.0.0:444", "app:app"] 

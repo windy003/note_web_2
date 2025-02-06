@@ -12,8 +12,21 @@ services:
     environment:
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}  # 使用环境变量
       - FLASK_ENV=production  # 标记生产环境
-    user: root  # 临时使用root用户运行
     restart: always 
+    command: ["gunicorn", 
+              "--workers", "4",
+              "--timeout", "120",
+              "--keep-alive", "5",
+              "--max-requests", "1000",
+              "--max-requests-jitter", "50",
+              "--log-level", "error",        # 改为 error 级别
+              "--access-logfile", "-",
+              "--error-logfile", "-",
+              "--certfile", "/etc/ssl/certs/fullchain.pem",  # 添加 SSL 证书配置
+              "--keyfile", "/etc/ssl/certs/privkey.pem",     # 添加 SSL 密钥配置
+              "--bind", "0.0.0.0:444",
+              "--access-logformat", "%(h)s %(l)s %(u)s %(t)s '%(r)s' %(s)s %(b)s '%(f)s' '%(a)s'",  # 添加自定义日志格式
+              "app:app"]
 
 volumes:
   instance:
