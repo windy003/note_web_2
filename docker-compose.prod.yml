@@ -4,7 +4,7 @@ services:
   web:
     image: windy007008/note-web-2:latest
     ports:
-      - "444:444"  # 生产环境用443
+      - "444:444"  
     volumes:
       - instance:/app/instance  
       - /etc/letsencrypt/live/windy.run/fullchain.pem:/etc/ssl/certs/fullchain.pem:ro

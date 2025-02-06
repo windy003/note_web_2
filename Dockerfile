@@ -11,4 +11,4 @@ COPY . .
 RUN useradd -m myuser
 USER myuser
 
-CMD ["python", "app.py"] 
+CMD ["gunicorn", "-b", "0.0.0.0:444", "app:app"] 
