@@ -6,7 +6,7 @@ services:
     ports:
       - "444:444"  
     volumes:
-      - instance:/app/instance  
+      - instance:/app/instance:rw
       - /etc/letsencrypt/live/windy.run/fullchain.pem:/etc/ssl/certs/fullchain.pem:ro
       - /etc/letsencrypt/live/windy.run/privkey.pem:/etc/ssl/certs/privkey.pem:ro
     environment:
@@ -19,10 +19,11 @@ services:
               "--keep-alive", "5",
               "--max-requests", "1000",
               "--max-requests-jitter", "50",
-              "--log-level", "error",        # 改为 error 级别
+              "--log-level", "error",        # 改为 error/debug 级别
               "--access-logfile", "-",
               "--error-logfile", "-",
               "--certfile", "/etc/ssl/certs/fullchain.pem",  # 添加 SSL 证书配置
+
               "--keyfile", "/etc/ssl/certs/privkey.pem",     # 添加 SSL 密钥配置
               "--bind", "0.0.0.0:444",
               "--access-logformat", "%(h)s %(l)s %(u)s %(t)s '%(r)s' %(s)s %(b)s '%(f)s' '%(a)s'",  # 添加自定义日志格式
