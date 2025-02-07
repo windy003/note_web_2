@@ -21,9 +21,10 @@ login_manager.login_view = 'login'
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=True)
-    content = db.Column(db.Text, nullable=False)
+    content = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Shanghai')))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(pytz.timezone('Asia/Shanghai')), onupdate=datetime.now)
+
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 class User(UserMixin, db.Model):
