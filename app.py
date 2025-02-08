@@ -94,18 +94,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
 
-def init_db():
-    conn = sqlite3.connect('notes.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS notes
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  title TEXT NOT NULL,
-                  content TEXT NOT NULL,
-                  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)''')
-    conn.commit()
-    conn.close()
-
 @app.route('/')
 def index():
     if current_user.is_authenticated:
